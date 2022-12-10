@@ -8,6 +8,4 @@ To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
 
 This is my first time using Rstudio.
 
-```{r}
-1 + 1
-```
+
