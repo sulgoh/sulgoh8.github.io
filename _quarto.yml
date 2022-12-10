@@ -7,15 +7,10 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - href: about.qmd
-        text: About
-      - href: blog.qmd
-        text: Blog
-      - href: cv.qmd
-        text: CV
-      - href: assignments.qmd
-        text: Assignment
-        
+      - about.qmd
+      - blog.qmd
+      - cv.qmd
+
 format:
   html:
     theme: cosmo
