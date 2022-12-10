@@ -1,0 +1,9 @@
+---
+title: "Blog"
+---
+
+This is my Blog.
+
+To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+
+I have a blog and you are welcome to my blog.

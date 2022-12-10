@@ -1,0 +1,312 @@
+---
+title: "Data Methods Group Project"
+author: "Genna Campain"
+date: "9/10/2022"
+output: html_document
+---
+# Scrape and edit top songs lists
+Load packages
+```{r, echo = FALSE}
+library(spotifyr)
+library(magrittr)
+library(geniusr)
+library(dplyr)
+library(tidyverse)
+library(tidytext)
+library(textdata)
+library(stringr)
+```
+Access token
+```{r}
+id <- "9bd81604c1724db4b9ad68f64dd7fbfe"
+secret <- "791feacce6c143f5bf2ecb23d517e055"
+Sys.setenv(SPOTIFY_CLIENT_ID = id)
+Sys.setenv(SPOTIFY_CLIENT_SECRET = secret)
+access_token <- get_spotify_access_token()
+token <- "QPPNNpRdh3O3T-e7LbSGTeYzIefKe1ZL6CeoR26DKwRxdMbln6audf3TNViNVhEG"
+Sys.setenv(GENIUS_API_TOKEN = token)
+```
+Scraping top 100 songs of the year playlists
+```{r}
+year_id <- data.frame(id = c("37i9dQZF1DXe2bobNYDtW8", "37i9dQZF1DWVRSukIED0e9", "37i9dQZF1DX7Jl5KP2eZaS", "5GhQiRkGuqzpWZSE7OU4Se", "37i9dQZF1DX18jTM2l2fJY"), year = 2018:2022)
+
+top_songs <- data.frame()
+for(j in 1:5) {
+playlist_id <- year_id[j, 1]
+year <- year_id[j, 2]
+tracks <- get_playlist_tracks(
+    playlist_id = playlist_id,
+    fields = c("track.artists", "track.duration_ms", "track.explicit", "track.id", "track.name", "track.popularity", "track.album.name", "track.album.release.date")
+) %>%
+  mutate(year = year)
+top_songs <- rbind(top_songs, tracks)
+}
+```
+Subset to take top 50 songs by year, unpack artist names
+```{r, echo = FALSE}
+top_songs <- top_songs %>% 
+  group_by(year) %>% 
+  mutate(rown = row_number()) %>%
+  ungroup()
+top_songs <- top_songs[which(top_songs$rown <= 50), ]
+
+artists <- top_songs$track.artists
+artists2 <- matrix(0, 0, nrow = 250, ncol = 1)
+for(j in 1:250){ 
+     df <- artists[[j]]
+     name <- df$name
+     artists2[j] <- name
+}
+top_songs <- cbind(top_songs, artists2)
+songinfo <- select(top_songs, c(track.name, artists2, year)) %>%
+  rename(track.artists = artists2)
+```
+# Scrape song lyrics
+Edit song and artist names to match Genius website
+```{r}
+songinfo$track.name <- gsub("\\s*\\([^\\)]+\\)","",as.character(songinfo$track.name))
+songinfo2018 <- songinfo[which(songinfo$year == 2018), ]
+songinfo2019 <- songinfo[which(songinfo$year == 2019), ]
+songinfo2020 <- songinfo[which(songinfo$year == 2020), ]
+songinfo2021 <- songinfo[which(songinfo$year == 2021), ]
+songinfo2022 <- songinfo[which(songinfo$year == 2022), ]
+
+
+# 2018
+songinfo2018[19, 1] <- "LOVE."
+songinfo2018[15, 2] <- "Lil Baby and Drake"
+songinfo2018[6, 2] <- "Juice wrld"
+songinfo2018[13, 1] <- "happier"
+songinfo2018[17, 2] <- "Offset and Metro Boomin"
+songinfo2018[21, 2] <- "Anne marie"
+songinfo2018[32, 2] <- "Dynoro and gigi dagostino"
+songinfo2018[33, 2] <- "G Eazy and Halsey"
+songinfo2018[33, 1] <- "Him and I"
+songinfo2018[36, 1] <- "Te bote"
+songinfo2018[39, 1] <- "1 2 3"
+songinfo2018[39, 2] <- "Sofia Reyes"
+songinfo2018[41, 2] <- "Hailee Steinfeld and Alesso"
+songinfo2018[48, 1] <- "Dejala Que Vuelva"
+# 2019
+songinfo2019[3, 2] <- "Shawn Mendes and Camila Cabello"
+songinfo2019[3, 1] <- "Senorita"
+songinfo2019[5, 1] <- "Sunflower"
+songinfo2019[44, 1] <- "10000 hours"
+songinfo2019[44, 2] <- "Dan shay"
+# 2020
+songinfo2020[21, 2] <- "Jawsh 685 and Jason Derulo"
+songinfo2020[21, 1] <- "Savage love laxed siren beat"
+songinfo2020[26, 1] <- "Senorita"
+songinfo2020[26, 2] <- "Shawn Mendes and Camila Cabello"
+songinfo2020[38, 1] <- "Sunflower"
+songinfo2020[39, 1] <- "Hawai"
+songinfo2020[42, 1] <- "ritmo bad boys for life"
+songinfo2020[42, 2] <- "The black eyed peas and j balvin"
+songinfo2020[47, 2] <- "Ariana Grande and Justin Bieber"
+
+# 2021
+songinfo2021[2, 1] <- "Montero Call Me by Your Name"
+songinfo2021[10, 1] <- "Beggin"
+songinfo2021[10, 2] <- "Maneskin"
+songinfo2021[12, 1] <- "Dakiti"
+songinfo2021[17, 2] <- "Silk Sonic"
+songinfo2021[21, 2] <- "Tiesto"
+songinfo2021[25, 2] <- "Riton and Nightcrawlers"
+songinfo2021[25, 1] <- "Friday dopamine re edit"
+songinfo2021[26, 1] <- "telepatia"
+songinfo2021[33, 2] <- "Myke Towers and Juhn"
+songinfo2021[34, 2] <- "Maneskin"
+songinfo2021[46, 1] <- "Que Mas Pues"
+songinfo2021[48, 1] <- "34 35"
+songinfo2021[50, 1] <- "Pareja Del Ano"
+songinfo2021[50, 2] <- "Sebastian yatra and Myke Towers"
+
+# 2022
+songinfo2022[5, 1] <- "Titi Me Pregunto"
+songinfo2022[7, 1] <- "Enemy"
+songinfo2022[8, 1] <- "quevedo bzrp music sessions vol 52"
+songinfo2022[8, 2] <- "Bizarrap and quevedo"
+songinfo2022[10, 1] <- "Running up that hill a deal with god"
+songinfo2022[19, 2] <- "Elley Duhe"
+songinfo2022[22, 2] <- "Rauw alejandro and chencho corleone"
+songinfo2022[29, 2] <- "Lost frequencies and calum scott"
+songinfo2022[36, 1] <- "I Aint Worried"
+songinfo2022[39, 1] <- "Una Noche en Medellin"
+songinfo2022[42, 2] <- "Bad Bunny & Rauw Alejandro"
+songinfo2022[44, 2] <- "Tiesto"
+```
+Loop for scraping (for some reason loop randomly breaks if too many numbers)
+```{r}
+# 2018
+final_df <- data.frame()
+for(j in 48:50) {
+  artist_name <- songinfo2018[j, 2]
+  song_title <- songinfo2018[j, 1]
+  df <- get_lyrics_search(artist_name = artist_name, song_title = song_title)
+  df <- df$line
+  df <- as.vector(df)
+  df<- paste(df, collapse = " ") 
+  final_df <- rbind(final_df, df)
+}
+
+# 2019
+for(j in 48:50) {
+  artist_name <- songinfo2019[j, 2]
+  song_title <- songinfo2019[j, 1]
+  df <- get_lyrics_search(artist_name = artist_name, song_title = song_title)
+  df <- df$line
+  df <- as.vector(df)
+  df<- paste(df, collapse = " ") 
+  final_df <- rbind(final_df, df)
+}
+
+# 2020
+for(j in 47:50) {
+  artist_name <- songinfo2020[j, 2]
+  song_title <- songinfo2020[j, 1]
+  df <- get_lyrics_search(artist_name = artist_name, song_title = song_title)
+  df <- df$line
+  df <- as.vector(df)
+  df<- paste(df, collapse = " ") 
+  final_df <- rbind(final_df, df)
+}
+
+# 2021
+for(j in 48:50) {
+  artist_name <- songinfo2021[j, 2]
+  song_title <- songinfo2021[j, 1]
+  df <- get_lyrics_search(artist_name = artist_name, song_title = song_title)
+  df <- df$line
+  df <- as.vector(df)
+  df<- paste(df, collapse = " ")
+  final_df <- rbind(final_df, df)
+}
+
+# 2022
+final_df <- data.frame()
+for(j in 44:50) {
+  artist_name <- songinfo2022[j, 2]
+  song_title <- songinfo2022[j, 1]
+  df <- get_lyrics_search(artist_name = artist_name, song_title = song_title)
+  df <- df$line
+  df <- as.vector(df)
+  df<- paste(df, collapse = " ")
+  final_df <- rbind(final_df, df)
+}
+
+colnames(final_df)[1] <- "lyrics"
+setwd("~/Desktop/Fall 2022/Data methods/Group Project")
+save(final_df, file="lyrics_data.Rda")
+```
+Label column and add year
+```{r}
+load("~/Desktop/Fall 2022/Data methods/Group Project/lyrics_data.Rda")
+final_df$num <- seq.int(from = 1, to = 250)
+final_df$year <- 2018
+final_df$year[which(final_df$num > 50 & final_df$num < 101)] <- 2019
+final_df$year[which(final_df$num > 100 & final_df$num < 151)] <- 2020
+final_df$year[which(final_df$num > 150 & final_df$num < 201)] <- 2021
+final_df$year[which(final_df$num > 200)] <- 2022
+```
+Paste all lyrics for year into one line of dataframe
+https://stackoverflow.com/questions/54805201/how-to-paste-all-string-values-in-a-column-together-as-one 
+```{r}
+# insert year here
+df2 <- final_df %>%
+  group_by(year) %>%
+  summarise(col = paste(lyrics, collapse=" "))
+df2 <- df2 %>%
+  ungroup()
+write.csv(df2,"lyrics_oneline.csv", row.names = FALSE)
+```
+Text analysis
+```{r}
+count_result <- data.frame()
+afinn_result <- data.frame()
+bing_and_nrc_result <- data.frame()
+for(j in 2018:2021) {
+text <- df2$col[which(df2$year == j)]
+tibble <- tibble(line = 1, text = text)
+tidy_lyrics <- unnest_tokens(tibble, word, text)
+data(stop_words)
+tidy_lyrics <- tidy_lyrics %>%
+  anti_join(stop_words)
+# Count of common words
+count <- tidy_lyrics %>%
+  count(word, sort = TRUE) %>%
+  mutate(year = j)
+count_result <- rbind(count_result, count)
+# Sentiment analysis using afinn
+afinn <- get_sentiments("afinn")
+afinn_text <- tidy_lyrics %>% 
+  inner_join(afinn) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN") %>%
+  mutate(year = j)
+afinn_result <- rbind(afinn_result, afinn_text)
+# Sentiment analysis using bing and nrc
+bing_and_nrc <- bind_rows(
+  tidy_lyrics %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing et al."),
+   tidy_lyrics %>% 
+    inner_join(get_sentiments("nrc") %>% 
+                 filter(sentiment %in% c("positive", 
+                                         "negative"))
+    ) %>%
+    mutate(method = "NRC")) %>%
+  count(method, sentiment) %>%
+  pivot_wider(names_from = sentiment,
+              values_from = n,
+              values_fill = 0) %>% 
+  mutate(sentiment = positive - negative) %>%
+  mutate(year = j)
+bing_and_nrc_result <- rbind(bing_and_nrc_result, bing_and_nrc)
+}
+
+```
+Get audio features
+```{r}
+year_id <- data.frame(id = c("37i9dQZF1DXe2bobNYDtW8", "37i9dQZF1DWVRSukIED0e9", "37i9dQZF1DX7Jl5KP2eZaS", "5GhQiRkGuqzpWZSE7OU4Se", "37i9dQZF1DX18jTM2l2fJY"), year = 2018:2022)
+
+songs_ana <- data.frame()
+for(j in 1:5) {
+playlist_id <- year_id[j, 1]
+year <- year_id[j, 2]
+tracks <- get_playlist_audio_features(
+  "spotify",
+  playlist_id) %>%
+  mutate(year = year)
+songs_ana <- rbind(songs_ana, tracks)
+}
+songs_ana <- inner_join(songs_ana, top_songs, by = c("track.id", "year"))
+songs_ana <- songs_ana %>%
+  select(danceability, energy, key, loudness, speechiness, acousticness, instrumentalness, liveness, valence, tempo, year, track.name.y, track.id)
+save(songs_ana, file="playlist audio features.Rda")
+# write.csv(songs_ana,"playlist audio features.csv", row.names = FALSE)
+```
+Get lyrics for songs specifically about COVID-19
+```{r}
+covid_songs <- read_excel("covid songs.xlsx") %>%
+  as.matrix()
+final_df2 <- data.frame()
+for(j in 7:23) {
+  artist_name <-covid_songs[j, 2]
+  song_title <- covid_songs[j, 1]
+  df <- get_lyrics_search(artist_name = artist_name, song_title = song_title)
+  df <- df$line
+  df <- as.vector(df)
+  df<- paste(df, collapse = " ") 
+  final_df2 <- rbind(final_df2, df)
+}
+colnames(final_df2) <- "lyrics"
+final_df2 <- final_df2 %>%
+  summarise(col = paste(lyrics, collapse=" "))
+save(final_df2, file="covid songs.Rda")
+```
+
+
+
+
+
+
